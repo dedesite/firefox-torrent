@@ -1,0 +1,13 @@
+{
+	"name": "firefox-torrent",
+	"version": "0.0.1",
+	"description": "Try to bring torrent streaming compatibility to Firefox",
+	"author": "Andréas Livet",
+	"dependencies":{
+		"torrent-stream":"*",
+		"express":"*",
+		"serve-index":"*",
+		"mime":"*",
+		"file-size":"*"
+	}
+}
