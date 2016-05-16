@@ -12,6 +12,7 @@ var rangeParser = require('range-parser');
 var path = require('path')
   , join = path.join;
 var fs = require('fs');
+var url = require('url');
 var app = express();
 
 //Usefull if we are fetching a specific file in a already open torrent
@@ -22,25 +23,24 @@ var currentEngine = null;
 function serveTorrentIndex() {
   return function (req, res) {
     console.log('request recieved', req.path, req.url);
-    //@temp cause magnet link is now after localhost:3000/
-    var link = req.url.substr(1);
-    var splitedLink = link.split('&');
-    var lastElt = splitedLink[splitedLink.length - 1];
+    var parsedUrl = url.parse(req.url, true);
     var forceDownload = false;
-
-    if(lastElt.substr(0, 6) === 'force=') {
-      forceDownload = true;
-      splitedLink.pop();
-      lastElt = splitedLink[splitedLink.length - 1];
+    //Recreate magnet link
+    var link = parsedUrl.pathname + '?xt=' + parsedUrl.query['xt'];
+    if(parsedUrl.pathname !== '/magnet:' || !parsedUrl.query['xt']){
+      res.statusCode = 404;
+      res.end('Not a magnet link : ' + parsedUrl.href);
+      return;
     }
 
-    console.log('lastElt', lastElt);
+    if(parsedUrl.query['force']) {
+      forceDownload = true;
+      console.log('download is forced');
+    }
+
     var index = null;
-    //If we are looking for a file inside the torrent
-    if(lastElt.substr(0, 4) === 'ind=') {
-      index = lastElt.substr(4);
-      splitedLink.pop();
-      link = splitedLink.join('&');
+    if(parsedUrl.query['ind']) {
+      index = parsedUrl.query['ind'];
       console.log('searching for file index', index);
     }
 
@@ -78,10 +78,10 @@ function serveFiles(req, res, files, index, link, forceDownload) {
   }
   else if(files.length === 1 || index !== null) {
     var ind = files.length === 1 ? 0 : index;
+    console.log(files);
     serveTorrentFile(req, res, files[ind], forceDownload);
   }
   else {
-    currentStart = null;
     res.statusCode = 404;
     res.end('No files in this torrent'); 
   }
@@ -97,8 +97,8 @@ function serveHtmlFileList(req, res, files, link){
 
   files.forEach(function(file, index){
     html += '<li>';
-      html += '<a href="./' + link + '&ind=' + index + '">' + file.name + ' - ' + filesize(file.length).human() + '</a>';
-      html += ' (<a href="./' + link + '&ind=' + index + '&force=1">download</a>)';
+      html += '<a href=".' + link + '&ind=' + index + '">' + file.name + ' - ' + filesize(file.length).human() + '</a>';
+      html += ' (<a href=".' + link + '&ind=' + index + '&force=1">download</a>)';
     html += '</li>';
   });
 
