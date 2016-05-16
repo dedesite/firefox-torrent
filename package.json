@@ -6,8 +6,8 @@
 	"dependencies":{
 		"torrent-stream":"*",
 		"express":"*",
-		"serve-index":"*",
 		"mime":"*",
-		"file-size":"*"
+		"file-size":"*",
+		"range-parser":"*"
 	}
 }
